@@ -1,14 +1,8 @@
-case $::osfamily {
-  'redhat': {
-    package { 'epel-release': }
-  } # RedHat
-}
-
 $master_cert = 'master.localdomain'
 $master_ip   = '192.168.5.16'
 
 class { '::icinga2':
-  manage_repo  => true,
+  manage_repos => true,
   constants    => {
     'NodeName' => 'slave.localdomain',
   },

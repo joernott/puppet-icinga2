@@ -1,6 +1,6 @@
 {
   "name": "icinga-icinga2",
-  "version": "2.4.1",
+  "version": "3.0.0",
   "author": "Icinga Development Team",
   "summary": "Icinga 2 Puppet Module",
   "license": "Apache-2.0",
@@ -8,6 +8,10 @@
   "project_page": "https://github.com/icinga/puppet-icinga2",
   "issues_url": "https://github.com/icinga/puppet-icinga2/issues",
   "dependencies": [
+    {
+      "name": "icinga/icinga",
+      "version_requirement": ">= 1.0.0 < 2.0.0"
+    },
     {
       "name": "puppetlabs/stdlib",
       "version_requirement": ">= 5.0.0 < 7.0.0"
@@ -64,6 +68,7 @@
     {
       "operatingsystem": "Debian",
       "operatingsystemrelease": [
+        "8",
         "9",
         "10"
       ]
@@ -71,15 +76,16 @@
     {
       "operatingsystem": "Ubuntu",
       "operatingsystemrelease": [
-        "14.04",
         "16.04",
-        "18.04"
+        "18.04",
+        "20.04"
       ]
     },
     {
       "operatingsystem": "SLES",
       "operatingsystemrelease": [
-        "12"
+        "12",
+        "15"
       ]
     },
     {

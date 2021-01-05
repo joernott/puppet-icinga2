@@ -1,11 +1,13 @@
 class { '::icinga2':
-  manage_repo => true,
-  confd       => 'example.d',
+  manage_repos => true,
+  confd        => 'example.d',
 }
 
 file { '/etc/icinga2/example.d':
-  ensure => directory,
-  tag    => 'icinga2::config::file',
+  ensure  => directory,
+  tag     => 'icinga2::config::file',
+  purge   => true,
+  recurse => true,
 }
 
 
@@ -104,9 +106,9 @@ file { '/etc/icinga2/example.d':
 
 ::icinga2::object::service { 'disk':
   target        => '/etc/icinga2/example.d/services.conf',
-  apply         => 'fs => config in host.vars.disks',
+  apply         => 'disk => config in host.vars.disks',
   import        => [ 'generic-service' ],
-  check_command => 'disk',
+  check_command => '-:"disk"',
   vars          => '+ config',
 }
 

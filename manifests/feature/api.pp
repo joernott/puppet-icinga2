@@ -63,15 +63,15 @@
 #   - none: Does nothing and you either have to manage the files yourself as file resources
 #           or use the ssl_key, ssl_cert, ssl_cacert parameters.
 #
-# @param [Optional[String]] ssl_key
+# @param [Optional[Stdlib::Base64]] ssl_key
 #   The private key in a base64 encoded string to store in cert directory. This parameter
 #   requires pki to be set to 'none'.
 #
-# @param [Optional[String]] ssl_cert
+# @param [Optional[Stdlib::Base64]] ssl_cert
 #   The certificate in a base64 encoded string to store in cert directory This parameter
 #    requires pki to be set to 'none'.
 #
-# @param [Optional[String]] ssl_cacert
+# @param [Optional[Stdlib::Base64]] ssl_cacert
 #   The CA root certificate in a base64 encoded string to store in cert directory. This parameter
 #   requires pki to be set to 'none'.
 #
@@ -95,12 +95,13 @@
 #
 # @param [Optional[Icinga2::Fingerprint]] fingerprint
 #   Fingerprint of the CA host certificate for validation. Requires pki is set to `icinga2`.
-#   You can get the fingerprint via 'openssl x509 -noout -fingerprint -sha1 -inform pem -in [certificate-file.crt]'
-#   on your CA host.
+#   You can get the fingerprint via 'openssl x509 -noout -fingerprint -sha256 -inform pem -in [certificate-file.crt]'
+#   on your CA host. (Icinga2 versions before 2.12.0 require '-sha1' as digest algorithm.)
 # 
 # @param [String] ticket_salt
 #   Salt to use for ticket generation. The salt is stored to api.conf if none or ca is chosen for pki.
-#   Defaults to constant TicketSalt.
+#   Defaults to constant TicketSalt. Keep in mind this parameter is parsed so please use only alpha numric
+#   characters as salt or a constant.
 #
 # @param [Optional[String]] ticket_id
 #   If a ticket_id is given it will be used instead of generating an ticket_id.
@@ -156,9 +157,9 @@ class icinga2::feature::api(
   Optional[String]                                        $ticket_id                        = undef,
   Hash[String, Hash]                                      $endpoints                        = { 'NodeName' => {} },
   Hash[String, Hash]                                      $zones                            = { 'ZoneName' => { endpoints => [ 'NodeName' ] } },
-  Optional[String]                                        $ssl_key                          = undef,
-  Optional[String]                                        $ssl_cert                         = undef,
-  Optional[String]                                        $ssl_cacert                       = undef,
+  Optional[Stdlib::Base64]                                $ssl_key                          = undef,
+  Optional[Stdlib::Base64]                                $ssl_cert                         = undef,
+  Optional[Stdlib::Base64]                                $ssl_cacert                       = undef,
   Optional[Enum['TLSv1', 'TLSv1.1', 'TLSv1.2']]           $ssl_protocolmin                  = undef,
   Optional[Icinga2::Interval]                             $ssl_handshake_timeout            = undef,
   Optional[String]                                        $ssl_cipher_list                  = undef,
@@ -306,27 +307,30 @@ class icinga2::feature::api(
         $_cmd_pki_get_cert = $cmd_pki_get_cert
       }
 
+      $_env = $::kernel ? {
+        'windows' => undef,
+        default   => ["ICINGA2_USER=${user}", "ICINGA2_GROUP=${group}"],
+      }
+
       Exec {
-        notify  => Class['::icinga2::service'],
+        environment => $_env,
+        notify      => Class['::icinga2::service'],
       }
 
       exec { 'icinga2 pki create key':
-        command     => "\"${icinga2_bin}\" pki new-cert --cn ${node_name} --key ${_ssl_key_path} --cert ${_ssl_cert_path}",
-        environment => ["ICINGA2_USER=${user}", "ICINGA2_GROUP=${group}"],
-        creates     => $_ssl_key_path,
+        command => "\"${icinga2_bin}\" pki new-cert --cn ${node_name} --key ${_ssl_key_path} --cert ${_ssl_cert_path}",
+        creates => $_ssl_key_path,
       }
 
       -> exec { 'icinga2 pki get trusted-cert':
-        path        => $::path,
-        command     => $_cmd_pki_get_cert,
-        environment => ["ICINGA2_USER=${user}", "ICINGA2_GROUP=${group}"],
-        creates     => $trusted_cert,
+        path    => $::path,
+        command => $_cmd_pki_get_cert,
+        creates => $trusted_cert,
       }
 
       -> exec { 'icinga2 pki request':
-        command     => "\"${icinga2_bin}\" pki request --host ${ca_host} --port ${ca_port} --ca ${_ssl_cacert_path} --key ${_ssl_key_path} --cert ${_ssl_cert_path} --trustedcert ${trusted_cert} --ticket ${_ticket_id}", # lint:ignore:140chars
-        environment => ["ICINGA2_USER=${user}", "ICINGA2_GROUP=${group}"],
-        creates     => $_ssl_cacert_path,
+        command => "\"${icinga2_bin}\" pki request --host ${ca_host} --port ${ca_port} --ca ${_ssl_cacert_path} --key ${_ssl_key_path} --cert ${_ssl_cert_path} --trustedcert ${trusted_cert} --ticket ${_ticket_id}", # lint:ignore:140chars
+        creates => $_ssl_cacert_path,
       }
     } # icinga2
   } # case pki

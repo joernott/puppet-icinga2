@@ -23,7 +23,7 @@
 #    Elasticsearch user name.
 #
 # @param [Optional[String]] password
-#    Elasticsearch user password.
+#    Elasticsearch user password. The password parameter isn't parsed anymore.
 #
 # @param [Optional[Boolean]] enable_ssl
 #    Either enable or disable SSL. Other SSL parameters are only affected if this is set to 'true'.
@@ -37,13 +37,13 @@
 # @param [Optional[Stdlib::Absolutepath]] ssl_cacert_path
 #   Location of the CA certificate.
 #
-# @param [Optional[String]] ssl_key
+# @param [Optional[Stdlib::Base64]] ssl_key
 #   The private key in a base64 encoded string to store in spicified ssl_key_path file.
 #
-# @param [Optional[String]] ssl_cert
+# @param [Optional[Stdlib::Base64]] ssl_cert
 #   The certificate in a base64 encoded to store in spicified ssl_cert_path file.
 #
-# @param [Optional[String]] ssl_cacert
+# @param [Optional[Stdlib::Base64]] ssl_cacert
 #   The CA root certificate in a base64 encoded string to store in spicified ssl_cacert_path file.
 #
 # @param [Optional[Boolean]] enable_send_perfdata
@@ -69,9 +69,9 @@ class icinga2::feature::elasticsearch(
   Optional[Stdlib::Absolutepath]         $ssl_key_path         = undef,
   Optional[Stdlib::Absolutepath]         $ssl_cert_path        = undef,
   Optional[Stdlib::Absolutepath]         $ssl_cacert_path      = undef,
-  Optional[String]                       $ssl_key              = undef,
-  Optional[String]                       $ssl_cert             = undef,
-  Optional[String]                       $ssl_cacert           = undef,
+  Optional[Stdlib::Base64]               $ssl_key              = undef,
+  Optional[Stdlib::Base64]               $ssl_cert             = undef,
+  Optional[Stdlib::Base64]               $ssl_cacert           = undef,
   Optional[Boolean]                      $enable_send_perfdata = undef,
   Optional[Icinga2::Interval]            $flush_interval       = undef,
   Optional[Integer]                      $flush_threshold      = undef,
@@ -179,12 +179,19 @@ class icinga2::feature::elasticsearch(
     $attrs_ssl = { enable_tls  => $enable_ssl }
   }
 
+  # The password parameter isn't parsed anymore.
+  if $password {
+    $_password = "-:\"${password}\""
+  } else {
+    $_password = undef
+  }
+
   $attrs = {
     host                   => $host,
     port                   => $port,
     index                  => $index,
     username               => $username,
-    password               => $password,
+    password               => $_password,
     enable_send_perfdata   => $enable_send_perfdata,
     flush_interval         => $flush_interval,
     flush_threshold        => $flush_threshold,

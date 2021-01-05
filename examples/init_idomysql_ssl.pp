@@ -1,9 +1,3 @@
-case $::osfamily {
-  'redhat': {
-    package { 'epel-release': }
-  } # RedHat
-}
-
 file { '/etc/mysql':
   ensure => directory,
 }
@@ -103,7 +97,7 @@ mysql::db { 'icinga':
 }
 
 class { '::icinga2':
-  manage_repo => true,
+  manage_repos => true,
 }
 
 class{ '::icinga2::feature::idomysql':
